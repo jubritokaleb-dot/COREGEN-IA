@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>COREGEN IA — Gerador de PDF</title>
+  <style>
+    :root{--accent:#6c5ce7;--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2}
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;background:linear-gradient(180deg,#071021 0%, #071833 100%);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+    .container{width:100%;max-width:980px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(90deg,var(--accent),#00bcd4);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .logo span{font-family:monospace}
+    h1{margin:0;font-size:20px}
+    p.lead{color:var(--muted);margin:4px 0 0;font-size:13px}
+    .card{background:rgba(255,255,255,0.03);padding:18px;border-radius:12px;box-shadow:0 6px 24px rgba(3,7,18,0.6)}
+
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media(max-width:920px){.grid{grid-template-columns:1fr}.brand h1{font-size:18px}}
+
+    /* left */
+    .left h2{margin-top:0}
+    label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+    input,textarea,select,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);background:transparent;color:inherit}
+    textarea{min-height:140px;resize:vertical}
+    .actions{display:flex;gap:10px;align-items:center;margin-top:12px}
+    .btn{cursor:pointer;border:none;padding:10px 14px;border-radius:10px;font-weight:600}
+    .btn-primary{background:var(--accent);color:white}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    /* right */
+    .sidebar h3{margin:0 0 8px}
+    .small{font-size:12px;color:var(--muted)}
+    .account-box{display:flex;flex-direction:column;gap:8px}
+    .link{font-size:13px;color:#9fb4ff;cursor:pointer}
+
+    footer{margin-top:14px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* subtle input focus */
+    input:focus,textarea:focus,select:focus{outline:none;box-shadow:0 6px 18px rgba(108,92,231,0.12);border-color:rgba(108,92,231,0.8)}
+
+    /* success toast */
+    .toast{position:fixed;right:18px;bottom:18px;background:rgba(10,20,30,0.95);padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);display:none}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo"><span>CG</span></div>
+        <div>
+          <h1>COREGEN IA</h1>
+          <p class="lead">Crie PDFs automaticamente com a ajuda da IA — rápido e simples.</p>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-ghost" id="open-register">Criar conta</button>
+        <button class="btn btn-primary" id="open-login">Entrar</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <main class="card left">
+        <h2>Gerador de PDF com IA — Demo</h2>
+        <p class="small">Descreva o conteúdo que você quer no PDF (ex.: e-book sobre produtividade, roteiro de curso, checklists, etc.). A IA definirá o formato mais adequado e gerará o arquivo.</p>
+
+        <form id="generate-form">
+          <label for="title">Título do documento</label>
+          <input id="title" placeholder="Ex.: Guia rápido de produtividade" required>
+
+          <label for="audience">Público-alvo (opcional)</label>
+          <input id="audience" placeholder="Ex.: empreendedores, estudantes">
+
+          <label for="description">Descrição / instruções para a IA</label>
+          <textarea id="description" placeholder="Explique o que você quer no documento. Seja específico: tom, número de seções, exemplos..." required></textarea>
+
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">Gerar PDF (demo)</button>
+            <button type="button" class="btn btn-ghost" id="reset-form">Limpar</button>
+          </div>
+        </form>
+
+        <section id="result" style="display:none;margin-top:16px">
+          <h3>Pré-visualização</h3>
+          <div id="preview" class="card" style="padding:12px;background:rgba(255,255,255,0.02)"></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button id="download-pdf" class="btn btn-primary">Baixar PDF</button>
+            <button id="edit-again" class="btn btn-ghost">Editar</button>
+          </div>
+        </section>
+
+      </main>
+
+      <aside class="card sidebar">
+        <h3>Conta</h3>
+        <div class="account-box">
+          <div id="account-info">
+            <div class="small">Você não está logado.</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn btn-primary" id="sidebar-login">Entrar</button>
+              <button class="btn btn-ghost" id="sidebar-register">Registrar</button>
+            </div>
+          </div>
+        </div>
+
+        <hr style="margin:14px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+        <h3>Como funciona</h3>
+        <p class="small">1) Faça login / registro — 2) Descreva seu documento — 3) A IA escolhe o formato e gera o PDF. (Esta é uma demo com geração local.)</p>
+
+        <div style="margin-top:12px">
+          <div class="small">Quer exportar para:</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost">E-book</button>
+            <button class="btn btn-ghost">Guia</button>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+
+    <footer>
+      <div class="small">COREGEN IA — Demo · Feito com ♥ — Não é uma versão final de produção</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast">Ação concluída</div>
+
+  <script>
+    // --- Utils ---
+    function showToast(msg, time=2400){
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(()=>t.style.display='none', time);
+    }
+
+    // --- Simple account system (demo only, salva no localStorage) ---
+    const openLogin = () => {
+      const email = prompt('Digite seu e‑mail para entrar (demo):');
+      if(!email) return;
+      const user = JSON.parse(localStorage.getItem('cg_user')) || null;
+      if(user && user.email === email){
+        localStorage.setItem('cg_logged', JSON.stringify(user));
+        updateAccountUI();
+        showToast('Entrou com sucesso');
+      } else {
+        alert('Conta não encontrada. Use registrar para criar uma conta demo.');
+      }
+    }
+
+    const openRegister = () => {
+      const email = prompt('Digite seu e‑mail para registrar (demo):');
+      if(!email) return;
+      const name = prompt('Nome (como aparecerá):') || email.split('@')[0];
+      const user = {email,name,createdAt:Date.now()};
+      localStorage.setItem('cg_user', JSON.stringify(user));
+      localStorage.setItem('cg_logged', JSON.stringify(user));
+      updateAccountUI();
+      showToast('Conta criada e logada (demo)');
+    }
+
+    function updateAccountUI(){
+      const info = document.getElementById('account-info');
+      const logged = JSON.parse(localStorage.getItem('cg_logged'));
+      if(logged){
+        info.innerHTML = `<div><strong>${logged.name}</strong><div class="small">${logged.email}</div></div><div style="display:flex;gap:8px;margin-top:8px"><button class='btn btn-ghost' id='logout'>Sair</button></div>`;
+        document.getElementById('logout').addEventListener('click', ()=>{localStorage.removeItem('cg_logged');updateAccountUI();showToast('Deslogado');});
+      } else {
+        info.innerHTML = `<div class="small">Você não está logado.</div><div style="display:flex;gap:8px;margin-top:8px"><button class='btn btn-primary' id='sidebar-login'>Entrar</button><button class='btn btn-ghost' id='sidebar-register'>Registrar</button></div>`;
+        document.getElementById('sidebar-login').addEventListener('click', openLogin);
+        document.getElementById('sidebar-register').addEventListener('click', openRegister);
+      }
+    }
+
+    // --- Fake IA generation (local demo) ---
+    function mockGenerateDocument(title, audience, description){
+      // Decide format simply by keywords (demo)
+      let format = 'Documento';
+      const d = description.toLowerCase();
+      if(d.includes('guia')||d.includes('passo')) format = 'Guia passo a passo';
+      if(d.includes('roteiro')||d.includes('script')) format = 'Roteiro';
+      if(d.includes('ebook')||d.includes('e-book')) format = 'E-book';
+
+      // Build a simple plaintext document
+      let content = `${title}\n\nPúblico-alvo: ${audience || 'Geral'}\nFormato sugerido: ${format}\n\nResumo:\n${description}\n\nSeções:\n`;
+      // create 3-6 sections
+      for(let i=1;i<=4;i++){
+        content += `\nSeção ${i}: Título da seção ${i}\nConteúdo exemplo da seção ${i}.\n`;
+      }
+      content += `\n---\nGerado em: ${new Date().toLocaleString()} (Demo local)`;
+      return {title,content,format};
+    }
+
+    function textToPDFBytes(title, text){
+      // Very small & simple PDF creation using a tiny blob (not real PDF rendering)
+      // For a proper PDF use a library (jsPDF). Here we produce a plain text file with .pdf extension for demo.
+      const header = `${title}\n\n`;
+      return new Blob([header + text], {type:'application/pdf'});
+    }
+
+    // Events
+    document.getElementById('open-login').addEventListener('click', openLogin);
+    document.getElementById('open-register').addEventListener('click', openRegister);
+    document.getElementById('sidebar-login').addEventListener('click', openLogin);
+    document.getElementById('sidebar-register').addEventListener('click', openRegister);
+
+    document.getElementById('reset-form').addEventListener('click', ()=>{
+      document.getElementById('generate-form').reset();
+      document.getElementById('result').style.display='none';
+    });
+
+    const form = document.getElementById('generate-form');
+    let lastDoc = null;
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const title = document.getElementById('title').value.trim();
+      const audience = document.getElementById('audience').value.trim();
+      const description = document.getElementById('description').value.trim();
+      if(!title||!description){showToast('Preencha título e descrição');return}
+
+      // Simula chamada à IA e mostra preview
+      const doc = mockGenerateDocument(title,audience,description);
+      lastDoc = doc;
+      const p = document.getElementById('preview');
+      p.innerHTML = `<strong>${doc.title}</strong><div class="small">Formato: ${doc.format}</div><pre style='white-space:pre-wrap;margin-top:8px;color:var(--muted)'>${doc.content}</pre>`;
+      document.getElementById('result').style.display='block';
+      showToast('Documento gerado (demo)');
+    });
+
+    document.getElementById('download-pdf').addEventListener('click', ()=>{
+      if(!lastDoc){showToast('Gere um documento primeiro');return}
+      const blob = textToPDFBytes(lastDoc.title, lastDoc.content);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (lastDoc.title || 'document') + '.pdf';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      showToast('Download iniciado');
+    });
+
+    document.getElementById('edit-again').addEventListener('click', ()=>{
+      document.getElementById('result').style.display='none';
+      showToast('Edite e gere novamente');
+    });
+
+    // On load
+    updateAccountUI();
+
+  </script>
+</body>
+</html>
